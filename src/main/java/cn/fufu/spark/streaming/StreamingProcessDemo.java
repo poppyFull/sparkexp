@@ -12,9 +12,7 @@ import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.kafka010.ConsumerStrategies;
-import org.apache.spark.streaming.kafka010.KafkaUtils;
-import org.apache.spark.streaming.kafka010.LocationStrategies;
+import org.apache.spark.streaming.kafka010.*;
 
 import java.util.*;
 
@@ -42,6 +40,7 @@ public class StreamingProcessDemo {
                         ssc,
                         LocationStrategies.PreferConsistent(),
                         ConsumerStrategies.<String, String>Subscribe(topics, kafkaParams)
+//                        ConsumerStrategies.Subscribe(topics, kafkaParams, offsets) // 读取每个partition的offset值
                 );
 
         JavaDStream<String> messageDstream = stream.map(new Function<ConsumerRecord<String, String>, String>() {
@@ -62,6 +61,14 @@ public class StreamingProcessDemo {
                 properties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
                 properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
                 rdd.foreachPartition(new WriteToKafkaFunction(properties));
+
+//                rdd.rdd(); //取到内层scala的rdd，相当于rdd.value这种。javaRDD是对scalaRDD的封装
+//                HasOffsetRanges hasOffsetRanges = (HasOffsetRanges)(rdd.rdd());
+//                StringBuilder sb = new StringBuilder();
+//                for (OffsetRange of: hasOffsetRanges.offsetRanges()) {
+//                    sb.append(of.topic()).append("-").append(of.partition()).append("=").append(of.fromOffset()).append("\n");
+//                }
+
             }
         });
 
